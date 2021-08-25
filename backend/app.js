@@ -1,11 +1,11 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
 const path = require('path');
 
 const saucesRoutes = require('./routes/sauces');
 const userRoutes = require('./routes/user');
 
+//Connection à la base de données
 mongoose.connect('mongodb+srv://proph:jorlobcr121233@cluster0.2fidz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority', {
         useNewUrlParser: true,
         useUnifiedTopology: true
@@ -13,6 +13,8 @@ mongoose.connect('mongodb+srv://proph:jorlobcr121233@cluster0.2fidz.mongodb.net/
     .then(() => console.log('Connexion à MongoDB réussie !'))
     .catch(() => console.log('Connexion à MongoDB échouée !'));
 
+
+//Création application express
 const app = express();
 
 //CORS
@@ -23,11 +25,16 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use(bodyParser.json());
+//Remplacer le body-parser : transforme les données arrivant à la requête POST en un objet JSON facilemnet exploitable
+app.use(express.json());
 
+//Gérer les images
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
+//Routes
 app.use('/api/sauces', saucesRoutes);
 app.use('/api/auth', userRoutes);
 
+
+//Export de l'application express pour déclaration dans server.js
 module.exports = app;
