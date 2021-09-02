@@ -8,6 +8,6 @@ passwordSchema
     .has().lowercase()
     .has().digits()
     .has().not().spaces()
-    .is().not().oneOf(['Passw0rd', 'Password123', 'Motdepasse123']);
+    .is().not().oneOf(['test', 'Password123', 'Motdepasse123']);
 
 module.exports = passwordSchema;

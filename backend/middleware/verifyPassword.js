@@ -3,10 +3,9 @@ const passwordSchema = require('../models/password');
 
 module.exports = (req, res, next) => {
     if (!passwordSchema.validate(req.body.password)) {
-        res.writeHead(400, '{"message":"Mot de passe requis : 8 caractères minimun. Au moins 1 Majuscule, 1 minuscule. et sans espaces"}', {
-            'content-type': 'application/json'
+        return res.status(400).json({
+            message: 'Mauvais mot de passe ! Veuillez utiliser une majuscule, une minuscule, des chiffres et un miniumm de 8 caractères.'
         });
-        res.end('Format de mot de passe incorrect');
     } else {
         next();
     }

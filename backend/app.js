@@ -4,15 +4,19 @@ const path = require('path');
 
 const helmet = require('helmet');
 const nocache = require('nocache');
+const cors = require('cors');
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const xssClean = require('xss-clean');
 
 const saucesRoutes = require('./routes/sauces');
 const userRoutes = require('./routes/user');
 
-// utilisation du module 'dotenv' pour masquer les informations de connexion à la base de données à l'aide de variables d'environnement
+//Utilisation du module 'dotenv' pour masquer les informations de connexion à la base de données grâce à une variable d'environnement
 require('dotenv').config();
 
-//Connection à la base de données
-mongoose.connect('mongodb+srv://proph:jorlobcr121233@cluster0.2fidz.mongodb.net/myFirstDatabase?retryWrites=true&w=majority', {
+//Connection à la base de données tout en cachant les informations de connexion
+mongoose.connect(`mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_NAME}.2fidz.mongodb.net/${process.env.NAMESPACE_NAME}?retryWrites=true&w=majority`, {
         useNewUrlParser: true,
         useUnifiedTopology: true
     })
@@ -24,19 +28,19 @@ mongoose.connect('mongodb+srv://proph:jorlobcr121233@cluster0.2fidz.mongodb.net/
 const app = express();
 
 //CORS
-app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    next();
-});
+app.use(cors());
 
+//Ajoute une limite de requêtes
+const limiter = rateLimit({
+    max: 100,
+    windowMs: 60 * 60 * 1000,
+    message: "Vous avez réalisé trop de requêtes !"
+})
 
-//Remplacer le body-parser : transforme les données arrivant à la requête POST en un objet JSON facilemnet exploitable
+//Remplacer le body-parser : transforme les données arrivant à la requête POST en un objet JSON facilement exploitable
 app.use(express.json());
 
-// Sécuriser Express en définissant divers en-têtes HTTP - https://www.npmjs.com/package/helmet#how-it-works
-// On utilise helmet pour plusieurs raisons notamment la mise en place du X-XSS-Protection afin d'activer le filtre de script intersites(XSS) dans les navigateurs web
+//Sécuriser Express en définissant divers en-têtes HTTP
 app.use(helmet());
 
 //Désactive la mise en cache du navigateur
@@ -45,10 +49,18 @@ app.use(nocache());
 //Gérer les images
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
+//Ajoute une limite de requêtes maximale par @IP
+app.use('/api', limiter);
+
+//Permet de se protéger contre les injections
+app.use(mongoSanitize());
+
+//Permet de se protéger contre les attaques XSS
+app.use(xssClean());
+
 //Routes
 app.use('/api/sauces', saucesRoutes);
 app.use('/api/auth', userRoutes);
-
 
 //Export de l'application express pour déclaration dans server.js
 module.exports = app;
